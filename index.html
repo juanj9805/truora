@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Truora — Demo para Equipo Comercial Interactuar</title>
+<style>
+  :root {
+    --primary: #1a3a5c;
+    --accent: #0e7490;
+    --green: #25d366;
+    --green-dark: #128c7e;
+    --light: #f0f6ff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --white: #ffffff;
+    --danger: #ef4444;
+    --success: #10b981;
+    --warn: #f59e0b;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f172a;
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── SLIDE CONTAINER ── */
+  #deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    padding: 0;
+    transition: opacity 0.3s ease;
+  }
+  .slide.active { display: flex; }
+
+  /* ── NAV ── */
+  #nav {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(15,23,42,0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 10px 20px;
+    border-radius: 50px;
+    z-index: 1000;
+  }
+
+  #nav button {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    padding: 8px 18px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  #nav button:hover { background: rgba(255,255,255,0.2); }
+  #nav button:disabled { opacity: 0.3; cursor: default; }
+  #nav button.primary-btn {
+    background: var(--accent);
+  }
+  #nav button.primary-btn:hover { background: #0e6380; }
+
+  #slide-counter {
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  #progress {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    z-index: 999;
+  }
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #0e7490, #25d366);
+    transition: width 0.4s ease;
+  }
+
+  /* ── SLIDE LAYOUTS ── */
+  .slide-cover {
+    background: linear-gradient(135deg, #0f172a 0%, #1a3a5c 50%, #0e7490 100%);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+  }
+
+  .slide-content {
+    background: var(--light);
+    overflow-y: auto;
+    padding: 50px 60px 100px;
+  }
+
+  .slide-dark {
+    background: linear-gradient(160deg, #0f172a, #1a3a5c);
+    overflow-y: auto;
+    padding: 50px 60px 100px;
+    color: white;
+  }
+
+  .slide-split {
+    background: var(--light);
+    flex-direction: row;
+    overflow: hidden;
+  }
+  .split-left {
+    flex: 0 0 40%;
+    background: linear-gradient(160deg, #0f172a, #1a3a5c);
+    padding: 60px 40px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .split-right {
+    flex: 1;
+    padding: 50px 50px 100px;
+    overflow-y: auto;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #67e8f9;
+    margin-bottom: 16px;
+  }
+  .tag-green { color: var(--green); }
+  .tag-amber { color: #fbbf24; }
+
+  h1 { font-size: clamp(28px, 4vw, 52px); font-weight: 800; line-height: 1.1; }
+  h2 { font-size: clamp(22px, 3vw, 36px); font-weight: 700; line-height: 1.2; }
+  h3 { font-size: clamp(16px, 2vw, 22px); font-weight: 600; }
+
+  .subtitle {
+    font-size: clamp(14px, 1.5vw, 18px);
+    opacity: 0.7;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  .section-title {
+    font-size: clamp(20px, 2.5vw, 30px);
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .section-sub {
+    color: var(--muted);
+    margin-bottom: 32px;
+    font-size: 15px;
+  }
+
+  /* ── COMPONENTS ── */
+  .card {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    border: 1px solid var(--border);
+  }
+
+  .card-grid {
+    display: grid;
+    gap: 16px;
+  }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+  .pain-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid var(--danger);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .pain-icon { font-size: 24px; flex-shrink: 0; }
+  .pain-title { font-weight: 600; color: var(--text); margin-bottom: 4px; font-size: 15px; }
+  .pain-desc { color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+  .solution-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid var(--success);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .pillar-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pillar-card:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateY(-2px);
+  }
+  .pillar-number {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #67e8f9;
+    margin-bottom: 10px;
+  }
+  .pillar-title { font-size: 20px; font-weight: 700; color: white; margin-bottom: 8px; }
+  .pillar-desc { color: rgba(255,255,255,0.6); font-size: 14px; line-height: 1.5; }
+
+  /* Steps */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: flex;
+    gap: 20px;
+    cursor: pointer;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .step.active .step-num {
+    background: var(--accent);
+    color: white;
+  }
+  .step-line {
+    width: 2px;
+    flex: 1;
+    background: var(--border);
+    margin: 4px 0;
+    min-height: 20px;
+  }
+  .step-body { padding-top: 6px; flex: 1; }
+  .step-title { font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .step.active .step-title { color: var(--accent); }
+  .step-detail {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .step.active .step-detail { max-height: 200px; }
+
+  /* WhatsApp mockup */
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .phone {
+    width: 280px;
+    background: #e5ddd5;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    border: 8px solid #1a1a1a;
+  }
+  .phone-header {
+    background: #075e54;
+    padding: 12px 16px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .phone-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #25d366;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .phone-name { font-weight: 600; font-size: 14px; }
+  .phone-status { font-size: 11px; opacity: 0.7; }
+  .phone-body {
+    padding: 12px;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    position: relative;
+    animation: popIn 0.3s ease;
+  }
+  .bubble-in {
+    background: white;
+    border-radius: 0 12px 12px 12px;
+    align-self: flex-start;
+  }
+  .bubble-out {
+    background: #dcf8c6;
+    border-radius: 12px 0 12px 12px;
+    align-self: flex-end;
+  }
+  .bubble-time { font-size: 10px; color: #999; text-align: right; margin-top: 4px; }
+  .bubble-icon { font-size: 18px; margin-bottom: 4px; }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.9) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* Table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .data-table th {
+    background: var(--primary);
+    color: white;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:nth-child(even) td { background: #f8fafc; }
+
+  /* Flow diagram */
+  .flow-col {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    border: 1px solid var(--border);
+  }
+  .flow-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border);
+  }
+  .flow-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .flow-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 14px;
+  }
+  .flow-item:last-child { border-bottom: none; }
+  .flow-arrow { color: var(--accent); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  /* Pilot table */
+  .pilot-table {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  .pilot-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .pilot-row:last-child { border-bottom: none; }
+  .pilot-label {
+    background: rgba(255,255,255,0.06);
+    padding: 16px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+  }
+  .pilot-value {
+    background: rgba(255,255,255,0.03);
+    padding: 16px 20px;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .badge-green { background: #052e16; color: #4ade80; }
+  .badge-blue { background: #0c1a3a; color: #93c5fd; }
+  .badge-amber { background: #451a03; color: #fbbf24; }
+
+  /* Quote */
+  .quote-box {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-left: 4px solid var(--green);
+    border-radius: 0 12px 12px 0;
+    padding: 24px 28px;
+    font-size: 18px;
+    font-style: italic;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.9);
+  }
+  .quote-attr {
+    margin-top: 12px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    font-style: normal;
+  }
+
+  /* Checkbox list */
+  .check-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .check-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .check-icon { flex-shrink: 0; margin-top: 2px; }
+
+  /* Cover decorations */
+  .cover-logo {
+    font-size: 64px;
+    margin-bottom: 24px;
+  }
+  .cover-badges {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+  .cover-badge {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 8px 18px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(14,116,144,0.15), rgba(37,211,102,0.1));
+    border: 1px solid rgba(14,116,144,0.3);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 20px;
+  }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-num { font-size: 36px; font-weight: 800; color: #67e8f9; }
+  .stat-label { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+
+  .needs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 24px;
+  }
+  .need-card {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    text-align: center;
+  }
+  .need-num {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 auto 16px;
+  }
+  .need-title { font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+  .need-desc { color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+  /* Keyboard hint */
+  #keys-hint {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    color: rgba(255,255,255,0.3);
+    font-size: 12px;
+    z-index: 999;
+  }
+
+  /* Step demo interactive */
+  #id-preview {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    border: 2px solid var(--border);
+    transition: all 0.3s;
+  }
+  .preview-icon { font-size: 48px; }
+  .preview-title { font-weight: 700; color: var(--primary); }
+  .preview-desc { color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .status-ok { background: #d1fae5; color: #065f46; }
+  .status-check { background: #fef3c7; color: #92400e; }
+  .status-alert { background: #fee2e2; color: #991b1b; }
+
+  .scrollable { overflow-y: auto; max-height: calc(100vh - 120px); }
+
+  /* Firma template preview */
+  .doc-preview {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    padding: 20px;
+    font-family: Georgia, serif;
+    font-size: 13px;
+    line-height: 1.8;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .doc-var {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+  }
+  .doc-var.filled {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  /* Channel advisor view */
+  .advisor-ui {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  .advisor-header {
+    background: var(--primary);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+  }
+  .advisor-logo { font-size: 20px; }
+  .advisor-title { font-weight: 600; font-size: 14px; }
+  .advisor-body { display: grid; grid-template-columns: 180px 1fr; min-height: 260px; }
+  .advisor-sidebar {
+    border-right: 1px solid var(--border);
+    padding: 10px 0;
+  }
+  .conv-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .conv-item.selected { background: #eff6ff; border-left: 3px solid var(--accent); }
+  .conv-name { font-weight: 600; color: var(--text); }
+  .conv-preview { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conv-badge { background: var(--accent); color: white; border-radius: 10px; padding: 1px 7px; font-size: 10px; align-self: flex-end; }
+  .advisor-main { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .advisor-msg {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .advisor-msg .msg-meta { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .quick-replies { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .qr-btn {
+    background: var(--light);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .qr-btn:hover { background: var(--accent); color: white; }
+</style>
+</head>
+<body>
+
+<div id="progress"><div id="progress-bar"></div></div>
+<div id="keys-hint">← → para navegar</div>
+
+<div id="deck">
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 1 — PORTADA
+  ══════════════════════════════════════════════ -->
+  <div class="slide slide-cover active" id="s1">
+    <div class="cover-logo">🔐</div>
+    <div class="tag" style="font-size:13px; letter-spacing:3px;">DIRECCIÓN DE TRANSFORMACIÓN EMPRESARIAL</div>
+    <h1 style="color:white; max-width:700px; margin:0 auto;">
+      Una nueva forma de<br>
+      <span style="background: linear-gradient(90deg,#25d366,#67e8f9); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">originar crédito</span>
+    </h1>
+    <p class="subtitle" style="color:rgba(255,255,255,0.6); max-width:500px; margin: 16px auto 0;">
+      Presentación de la plataforma Truora para el equipo comercial de Interactuar
+    </p>
+    <div class="cover-badges">
+      <span class="cover-badge">✓ Validación de Identidad</span>
+      <span class="cover-badge">✓ Firma Electrónica</span>
+      <span class="cover-badge">✓ Canal WhatsApp</span>
+    </div>
+    <p style="color:rgba(255,255,255,0.3); font-size:13px; margin-top:40px;">Marzo 2025 — Interactuar</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 2 — DOLORES DE HOY
+  ══════════════════════════════════════════════ -->
+  <div class="slide slide-content" id="s2">
+    <div class="section-title">¿Qué estamos resolviendo?</div>
+    <div class="section-sub">Los dolores que el equipo comercial vive todos los días</div>
+
+    <div class="card-grid grid-2" style="gap:14px;">
+      <div class="pain-card">
+        <div class="pain-icon">📱</div>
+        <div>
+          <div class="pain-title">Documentos por WhatsApp personal</div>
+          <div class="pain-desc">Fotos de cédulas y soportes dispersas entre los celulares de cada asesor, sin estandarización ni registro.</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">🔍</div>
+        <div>
+          <div class="pain-title">Sin trazabilidad de conversaciones</div>
+          <div class="pain-desc">Las conversaciones en WhatsApp personal no quedan registradas. Si el asesor se va, el historial desaparece.</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">✍️</div>
+        <div>
+          <div class="pain-title">Firma presencial y lenta</div>
+          <div class="pain-desc">Pagarés y contratos requieren presencia física, lo que retrasa el desembolso y complica clientes en otras ciudades.</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">⚠️</div>
+        <div>
+          <div class="pain-title">Riesgo de suplantación de identidad</div>
+          <div class="pain-desc">No existe un mecanismo automatizado para verificar que la cédula es auténtica o que la persona es quien dice ser.</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">⌨️</div>
+        <div>
+          <div class="pain-title">Datos no llegan al CRM</div>
+          <div class="pain-desc">La información llega en formatos distintos y el asesor debe digitalizar manualmente a Salesforce, con riesgo de error.</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">📋</div>
+        <div>
+          <div class="pain-title">Cumplimiento SARLAFT manual</div>
+          <div class="pain-desc">Las consultas a listas vinculantes y antecedentes se hacen manualmente, sin automatización ni registro centralizado.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 3 — QUÉ ES TRUORA
+  ══════════════════════════════════════════════ -->
+  <div class="slide slide-dark" id="s3">
+    <div class="tag">La solución</div>
+    <h2 style="color:white; margin-bottom:12px;">¿Qué es Truora?</h2>
+    <p style="color:rgba(255,255,255,0.6); margin-bottom:36px; font-size:15px; max-width:600px;">
+      Plataforma 360 de onboarding digital, verificación de identidad y firma electrónica.
+      8+ años en Latinoamérica. Business Partner oficial de Meta (WhatsApp).
+    </p>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-num">8+</div>
+        <div class="stat-label">Años en Latam</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">0</div>
+        <div class="stat-label">Apps que el cliente debe descargar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">En WhatsApp del cliente</div>
+      </div>
+    </div>
+
+    <div class="card-grid grid-3" style="gap:16px;">
+      <div class="pillar-card" onclick="goTo(4)">
+        <div class="pillar-number">Pilar 01</div>
+        <div class="pillar-title">🔐 Validación de Identidad</div>
+        <div class="pillar-desc">Verifica cédulas, biometría facial, SARLAFT y DataCrédito — automáticamente.</div>
+        <div style="margin-top:16px; color:#67e8f9; font-size:13px; font-weight:600;">Ver demo →</div>
+      </div>
+      <div class="pillar-card" onclick="goTo(5)">
+        <div class="pillar-number">Pilar 02</div>
+        <div class="pillar-title">✍️ Firma Electrónica</div>
+        <div class="pillar-desc">Pagarés y contratos firmados desde WhatsApp. Custodia en Decebal. Validez jurídica plena.</div>
+        <div style="margin-top:16px; color:#67e8f9; font-size:13px; font-weight:600;">Ver demo →</div>
+      </div>
+      <div class="pillar-card" onclick="goTo(6)">
+        <div class="pillar-number">Pilar 03</div>
+        <div class="pillar-title">💬 Canal WhatsApp</div>
+        <div class="pillar-desc">El cliente en su WhatsApp. El asesor en la plataforma. Historial, trazabilidad y campañas.</div>
+        <div style="margin-top:16px; color:#67e8f9; font-size:13px; font-weight:600;">Ver demo →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 4 — PILAR 1: VALIDACIÓN DE IDENTIDAD
+  ══════════════════════════════════════════════ -->
+  <div class="slide slide-split" id="s4">
+    <div class="split-left">
+      <div class="tag">Pilar 01</div>
+      <h2 style="color:white; margin-bottom:16px;">Validación de Identidad</h2>
+      <p style="color:rgba(255,255,255,0.6); font-size:14px; margin-bottom:28px; line-height:1.6;">
+        El asesor inicia el proceso. El sistema verifica al cliente automáticamente. Sin consultas manuales.
+      </p>
+
+      <div class="steps" id="id-steps">
+        <div class="step active" onclick="selectStep('id',0)">
+          <div class="step-left">
+            <div class="step-num">1</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <div class="step-title" style="color:white;">Foto de la cédula</div>
+            <div class="step-detail" style="color:rgba(255,255,255,0.6);">IA detecta fotocopias, documentos alterados o fotos superpuestas. El asesor no juzga — el sistema valida en tiempo real.</div>
+          </div>
+        </div>
+        <div class="step" onclick="selectStep('id',1)">
+          <div class="step-left">
+            <div class="step-num">2</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <div class="step-title" style="color:rgba(255,255,255,0.7);">Video de prueba de vida</div>
+            <div class="step-detail" style="color:rgba(255,255,255,0.6);">Compara el rostro con la foto de la cédula. Detecta que es una persona real: no una foto, no una máscara, no una imagen IA.</div>
+          </div>
+        </div>
+        <div class="step" onclick="selectStep('id',2)">
+          <div class="step-left">
+            <div class="step-num">3</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <div class="step-title" style="color:rgba(255,255,255,0.7);">Código OTP</div>
+            <div class="step-detail" style="color:rgba(255,255,255,0.6);">Confirmación por SMS, correo o WhatsApp. El sistema analiza la antigüedad del número y sus vínculos con otras plataformas financieras.</div>
+          </div>
+        </div>
+        <div class="step" onclick="selectStep('id',3)">
+          <div class="step-left">
+            <div class="step-num">4</div>
+          </div>
+          <div class="step-body">
+            <div class="step-title" style="color:rgba(255,255,255,0.7);">Consultas automáticas</div>
+            <div class="step-detail" style="color:rgba(255,255,255,0.6);">SARLAFT · SAGRILAFT · Antecedentes penales · DataCrédito · Experian. Todo sin que el asesor haga nada.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="split-right scrollable">
+      <div id="id-preview" class="card" style="margin-bottom:20px;">
+        <div class="preview-icon">🪪</div>
+        <div class="preview-title">Foto de la cédula</div>
+        <div class="preview-desc">El cliente recibe el mensaje en WhatsApp y toma una foto de su cédula. La IA valida autenticidad en segundos.</div>
+        <span class="status-badge status-ok">✓ Documento auténtico</span>
+      </div>
+
+      <div class="card" style="background:#fefce8; border-color:#fde68a; padding:14px 18px;">
+        <div style="font-size:13px; color:#92400e; display:flex; gap:8px; align-items:flex-start;">
+          <span>🔒</span>
+          <span><strong>Dato importante:</strong> Las fotos de cédula <u>no quedan en el chat de WhatsApp</u> del cliente ni del asesor. Quedan almacenadas en la plataforma, con acceso solo para el equipo autorizado.</span>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div style="font-weight:600; color:var(--primary); margin-bottom:12px; font-size:15px;">Consultas incluidas automáticamente:</div>
+        <div class="card-grid" style="gap:10px;">
+          <div class="solution-card" style="padding:12px 16px;">
+            <span>🛡️</span>
+            <div>
+              <div style="font-weight:600; font-size:14px;">SARLAFT / SAGRILAFT</div>
+              <div style="font-size:12px; color:var(--muted);">Listas vinculantes de cumplimiento</div>
+            </div>
+          </div>
+          <div class="solution-card" style="padding:12px 16px;">
+            <span>⚖️</span>
+            <div>
+              <div style="font-weight:600; font-size:14px;">Antecedentes penales</div>
+              <div style="font-size:12px; color:var(--muted);">Judiciales y penales automáticos</div>
+            </div>
+          </div>
+          <div class="solution-card" style="padding:12px 16px;">
+            <span>📊</span>
+            <div>
+              <div style="font-weight:600; font-size:14px;">DataCrédito / Experian</div>
+              <div style="font-size:12px; color:var(--muted);">Historial crediticio en tiempo real</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 5 — PILAR 2: FIRMA ELECTRÓNICA
+  ══════════════════════════════════════════════ -->
+  <div class="slide slide-split" id="s5">
+    <div class="split-left">
+      <div class="tag tag-green">Pilar 02</div>
+      <h2 style="color:white; margin-bottom:16px;">Firma Electrónica</h2>
+      <p style="color:rgba(255,255,255,0.6); font-size:14px; margin-bottom:28px; line-height:1.6;">
+        El pagaré se firma desde WhatsApp. Sin imprimir nada. Sin desplazarse. Con plena validez jurídica.
+      </p>
+
+      <ul class="check-list">
+        <li>
+          <span class="check-icon">📄</span>
+          <div>
+            <div style="font-weight:600; color:white; margin-bottom:2px;">Plantillas con variables</div>
+            <div style="font-size:13px; color:rgba(255,255,255,0.5);">El contrato se carga una vez. El sistema llena los datos automáticamente con lo ya recolectado.</div>
+          </div>
+        </li>
+        <li>
+          <span class="check-icon">👥</span>
+          <div>
+            <div style="font-weight:600; color:white; margin-bottom:2px;">Múltiples firmantes con orden</div>
+            <div style="font-size:13px; color:rgba(255,255,255,0.5);">Titular → Codeudor → Aval. Cada uno firma desde su propio WhatsApp, en cualquier ciudad.</div>
+          </div>
+        </li>
+        <li>
+          <span class="check-icon">🏦</span>
+          <div>
+            <div style="font-weight:600; color:white; margin-bottom:2px;">Integración con Decebal</div>
+            <div style="font-size:13px; color:rgba(255,255,255,0.5);">El pagaré firmado va automáticamente a Decebal como título valor. Habilita procesos de cobro jurídico.</div>
+          </div>
+        </li>
+        <li>
+          <span class="check-icon">🔏</span>
+          <div>
+            <div style="font-weight:600; color:white; margin-bottom:2px;">Certificado SHA-256</div>
+            <div style="font-size:13px; color:rgba(255,255,255,0.5);">Prueba de integridad del documento + fecha, hora, dispositivo, IP y datos biométricos del firmante. Válido judicialmente.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="split-right scrollable">
+      <div style="font-weight:600; color:var(--primary); margin-bottom:12px;">Vista previa de una plantilla de pagaré:</div>
+
+      <div id="doc-state">
+        <div class="doc-preview">
+          <div style="text-align:center; font-size:16px; font-weight:700; margin-bottom:16px;">PAGARÉ</div>
+          <p>Yo, <span class="doc-var" id="dv-nombre">[[nombre_cliente]]</span>, identificado con cédula Nº <span class="doc-var" id="dv-cedula">[[numero_cedula]]</span>, me comprometo a pagar a favor de Interactuar la suma de <span class="doc-var" id="dv-monto">[[monto_credito]]</span>, en cuotas de <span class="doc-var" id="dv-cuota">[[valor_cuota]]</span>, durante un plazo de <span class="doc-var" id="dv-plazo">[[plazo_meses]]</span> meses.</p>
+          <br>
+          <p>Tasa de interés: <span class="doc-var" id="dv-tasa">[[tasa_interes]]</span> mensual.</p>
+          <p>Ciudad: <span class="doc-var" id="dv-ciudad">[[ciudad]]</span>, <span class="doc-var" id="dv-fecha">[[fecha_firma]]</span>.</p>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+          <button onclick="fillDoc()" style="background:var(--accent); color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px;">
+            ▶ Simular llenado automático
+          </button>
+          <button onclick="resetDoc()" style="background:var(--border); color:var(--muted); border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-size:14px;">
+            ↺ Restablecer
+          </button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px; background:#f0fdf4; border-color:#a7f3d0;">
+        <div style="font-weight:700; color:#065f46; margin-bottom:8px;">🏦 ¿Qué es Decebal?</div>
+        <div style="font-size:13px; color:#047857; line-height:1.6;">
+          Plataforma colombiana de custodia de títulos valores. Una vez el pagaré se firma digitalmente y llega a Decebal, tiene la misma validez jurídica que un pagaré en papel — y habilita el proceso de cobro jurídico en caso de mora.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 6 — PILAR 3: CANAL WHATSAPP
+  ══════════════════════════════════════════════ -->
+  <div class="slide slide-split" id="s6">
+    <div class="split-left">
+      <div class="tag tag-green">Pilar 03</div>
+      <h2 style="color:white; margin-bottom:16px;">Canal WhatsApp</h2>
+      <p style="color:rgba(255,255,255,0.6); font-size:14px; margin-bottom:28px; line-height:1.6;">
+        El cliente sigue usando su WhatsApp normalmente.<br>
+        El asesor deja de usar su celular personal.
+      </p>
+
+      <div style="display:grid; gap:16px;">
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:16px;">
+          <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin-bottom:8px;">ANTES</div>
+          <ul style="list-style:none; color:rgba(255,255,255,0.6); font-size:14px; line-height:2;">
+            <li>❌ Asesor gestiona desde su celular personal</li>
+            <li>❌ Conversaciones no registradas</li>
+            <li>❌ Empresa sin visibilidad</li>
+            <li>❌ Historial se pierde si el asesor se va</li>
+          </ul>
+        </div>
+        <div style="background:rgba(37,211,102,0.1); border:1px solid rgba(37,211,102,0.3); border-radius:12px; padding:16px;">
+          <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--green); margin-bottom:8px;">CON TRUORA</div>
+          <ul style="list-style:none; color:rgba(255,255,255,0.8); font-size:14px; line-height:2;">
+            <li>✅ Asesor gestiona desde la plataforma</li>
+            <li>✅ Historial completo por cliente</li>
+            <li>✅ Empresa con trazabilidad total</li>
+            <li>✅ Respuestas rápidas con un clic</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="split-right scrollable" style="padding-top:30px;">
+      <div style="font-weight:600; color:var(--primary); margin-bottom:14px; font-size:15px;">Vista del asesor en la plataforma vs. vista del cliente en WhatsApp:</div>
+
+      <div style="display:grid; grid-template-columns:1fr 220px; gap:16px; align-items:start;">
+        <div class="advisor-ui">
+          <div class="advisor-header">
+            <div class="advisor-logo">🏢</div>
+            <div>
+              <div class="advisor-title">Interactuar — Plataforma de Asesores</div>
+            </div>
+          </div>
+          <div class="advisor-body">
+            <div class="advisor-sidebar">
+              <div class="conv-item selected">
+                <div class="conv-name">María González</div>
+                <div class="conv-preview">Hola, envié los documentos...</div>
+                <div class="conv-badge">2</div>
+              </div>
+              <div class="conv-item">
+                <div class="conv-name">Carlos Ruiz</div>
+                <div class="conv-preview">¿Ya revisaron mi cédula?</div>
+              </div>
+              <div class="conv-item">
+                <div class="conv-name">Ana Martínez</div>
+                <div class="conv-preview">En espera de firma</div>
+              </div>
+            </div>
+            <div class="advisor-main">
+              <div class="advisor-msg">
+                <div class="msg-meta">📨 María González · hace 5 min</div>
+                Hola, ya envié los documentos que me pedían. ¿Qué sigue?
+              </div>
+              <div class="quick-replies">
+                <button class="qr-btn">Hola [nombre], ya recibí tus docs 👋</button>
+                <button class="qr-btn">En 24h te confirmo</button>
+                <button class="qr-btn">Ver historial completo →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-header">
+              <div class="phone-avatar">🏦</div>
+              <div>
+                <div class="phone-name">Interactuar</div>
+                <div class="phone-status">en línea</div>
+              </div>
+            </div>
+            <div class="phone-body">
+              <div class="bubble bubble-in">
+                <div class="bubble-icon">👋</div>
+                Hola María, soy Carlos de Interactuar. Recibí tu información y estoy aquí para ayudarte.
+                <div class="bubble-time">9:01</div>
+              </div>
+              <div class="bubble bubble-out">
+                Gracias! ¿Qué documentos necesitan?
+                <div class="bubble-time">9:03</div>
+              </div>
+              <div class="bubble bubble-in">
+                Necesito que me envíes una foto de tu cédula 📷
+                <div class="bubble-time">9:04</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 7 — EL PROCESO COMPLETO
+  ══════════════════════════════════════════════ -->
+  <div class="slide slide-content" id="s7">
+    <div class="section-title">¿Cómo se ve el proceso completo?</div>
+    <div class="section-sub">Tres perspectivas: el cliente, el asesor y la empresa</div>
+
+    <div class="card-grid grid-3" style="gap:16px;">
+      <div class="flow-col">
+        <div class="flow-header">
+          <div class="flow-icon" style="background:#eff6ff; font-size:22px;">👤</div>
+          <div>
+            <div style="font-weight:700; color:var(--primary);">El Cliente</div>
+            <div style="font-size:12px; color:var(--muted);">Experiencia en WhatsApp</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Recibe mensaje en WhatsApp</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Envía foto de cédula</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Graba video de cara (prueba de vida)</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Llena formulario de solicitud</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Revisa y firma el pagaré</div>
+        </div>
+        <div class="flow-item" style="border:none;">
+          <div class="flow-arrow">→</div>
+          <div><strong style="color:var(--success);">Recibe confirmación ✓</strong></div>
+        </div>
+      </div>
+
+      <div class="flow-col" style="border-color:var(--accent); border-width:2px;">
+        <div class="flow-header" style="border-color:rgba(14,116,144,0.2);">
+          <div class="flow-icon" style="background:#ecfeff; font-size:22px;">🧑‍💼</div>
+          <div>
+            <div style="font-weight:700; color:var(--accent);">El Asesor</div>
+            <div style="font-size:12px; color:var(--muted);">Experiencia en la plataforma</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow" style="color:var(--accent);">→</div>
+          <div>Inicia proceso en la plataforma</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow" style="color:var(--accent);">→</div>
+          <div>Monitorea el avance del cliente</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow" style="color:var(--accent);">→</div>
+          <div>Ve alertas y resultados de validación</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow" style="color:var(--accent);">→</div>
+          <div>Atiende al cliente si es necesario</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow" style="color:var(--accent);">→</div>
+          <div>Aprueba el crédito</div>
+        </div>
+        <div class="flow-item" style="border:none;">
+          <div class="flow-arrow" style="color:var(--accent);">→</div>
+          <div><strong style="color:var(--accent);">Datos llegan a Salesforce ✓</strong></div>
+        </div>
+      </div>
+
+      <div class="flow-col">
+        <div class="flow-header">
+          <div class="flow-icon" style="background:#fdf2f8; font-size:22px;">🏛️</div>
+          <div>
+            <div style="font-weight:700; color:var(--primary);">La Empresa</div>
+            <div style="font-size:12px; color:var(--muted);">Lo que gana Interactuar</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Datos estandarizados y completos</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Menos errores de digitación</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Trazabilidad 100% de conversaciones</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Cumplimiento SARLAFT automatizado</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-arrow">→</div>
+          <div>Pagarés en Decebal (título valor)</div>
+        </div>
+        <div class="flow-item" style="border:none;">
+          <div class="flow-arrow">→</div>
+          <div><strong style="color:var(--success);">Cero papel ✓</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 8 — PROPUESTA DE PILOTO
+  ══════════════════════════════════════════════ -->
+  <div class="slide slide-dark" id="s8">
+    <div class="tag tag-amber">Propuesta</div>
+    <h2 style="color:white; margin-bottom:8px;">Piloto sin costo</h2>
+    <p style="color:rgba(255,255,255,0.6); margin-bottom:32px; font-size:15px;">
+      Antes de cualquier integración con Salesforce, validamos la herramienta con clientes y asesores reales.
+    </p>
+
+    <div class="pilot-table" style="margin-bottom:28px;">
+      <div class="pilot-row">
+        <div class="pilot-label">Costo</div>
+        <div class="pilot-value"><span class="badge badge-green">Sin costo</span></div>
+      </div>
+      <div class="pilot-row">
+        <div class="pilot-label">Duración</div>
+        <div class="pilot-value">⏱ ~3 semanas</div>
+      </div>
+      <div class="pilot-row">
+        <div class="pilot-label">Procesos incluidos</div>
+        <div class="pilot-value">📋 Hasta 100 procesos completos</div>
+      </div>
+      <div class="pilot-row">
+        <div class="pilot-label">Qué se prueba</div>
+        <div class="pilot-value">Flujo completo: validación de identidad + formularios + firma electrónica</div>
+      </div>
+      <div class="pilot-row">
+        <div class="pilot-label">Qué NO incluye</div>
+        <div class="pilot-value"><span class="badge badge-amber">Sin integración automática a Salesforce</span> — los datos se exportan manualmente</div>
+      </div>
+      <div class="pilot-row">
+        <div class="pilot-label">Valor del piloto</div>
+        <div class="pilot-value">✅ El flujo construido sirve de base para la integración posterior. No se pierde el trabajo.</div>
+      </div>
+    </div>
+
+    <div style="font-weight:600; color:rgba(255,255,255,0.7); margin-bottom:14px;">Para arrancar necesitamos:</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+      <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:18px; display:flex; gap:12px; align-items:flex-start;">
+        <span style="font-size:22px;">📱</span>
+        <div>
+          <div style="font-weight:600; color:white; margin-bottom:4px;">Línea de WhatsApp verificada</div>
+          <div style="font-size:13px; color:rgba(255,255,255,0.5);">Debe estar verificada por Meta Business API. No puede ser el celular personal de ningún asesor.</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:18px; display:flex; gap:12px; align-items:flex-start;">
+        <span style="font-size:22px;">📑</span>
+        <div>
+          <div style="font-weight:600; color:white; margin-bottom:4px;">Acuerdo de confidencialidad</div>
+          <div style="font-size:13px; color:rgba(255,255,255,0.5);">Necesario antes de correr el piloto con datos reales de clientes.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 9 — LO QUE NECESITAMOS DEL EQUIPO
+  ══════════════════════════════════════════════ -->
+  <div class="slide slide-content" id="s9">
+    <div class="section-title">Lo que necesitamos del equipo comercial</div>
+    <div class="section-sub">Tres preguntas que necesitamos responder juntos hoy</div>
+
+    <div class="needs-grid">
+      <div class="need-card">
+        <div class="need-num">1</div>
+        <div class="need-title">¿Cuáles son sus dolores prioritarios?</div>
+        <div class="need-desc">Identificar los 3 a 5 dolores que más les afectan en el día a día — en sus propias palabras, no en los nuestros.</div>
+      </div>
+      <div class="need-card">
+        <div class="need-num">2</div>
+        <div class="need-title">¿Quiénes participan en el piloto?</div>
+        <div class="need-desc">Asesores y clientes que puedan probar el flujo completo durante las 3 semanas.</div>
+      </div>
+      <div class="need-card">
+        <div class="need-num">3</div>
+        <div class="need-title">¿Qué tipos de crédito primero?</div>
+        <div class="need-desc">Los más comunes, los que tienen más fricción o los que involucran avales y firmantes en otras ciudades.</div>
+      </div>
+    </div>
+
+    <div class="highlight-box" style="margin-top:28px;">
+      <div style="font-weight:700; color:var(--primary); margin-bottom:8px;">Con esas respuestas, el equipo de Transformación se encarga de:</div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:12px;">
+        <div style="display:flex; gap:8px; align-items:flex-start; font-size:14px;">
+          <span>🔧</span><span>Estructurar el flujo y formularios en la plataforma</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:flex-start; font-size:14px;">
+          <span>📄</span><span>Configurar plantillas de pagarés de Interactuar</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:flex-start; font-size:14px;">
+          <span>👥</span><span>Acompañar el piloto durante las 3 semanas</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:28px; background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:24px;">
+      <div style="font-size:13px; color:var(--muted); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Adriana Tascón — Líder de Operación de Negocio, Interactuar</div>
+      <div style="font-size:17px; font-style:italic; color:var(--text); line-height:1.6;">
+        "Veo una herramienta muy buena que puede ajustarse mucho a las necesidades que tenemos. Y es bueno que podamos probarla con nuestro equipo comercial y con nuestros clientes."
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- NAVIGATION -->
+<div id="nav">
+  <button id="btn-prev" onclick="prev()" disabled>← Anterior</button>
+  <span id="slide-counter">1 / 9</span>
+  <button id="btn-next" onclick="next()" class="primary-btn">Siguiente →</button>
+</div>
+
+<script>
+  const TOTAL = 9;
+  let current = 1;
+
+  const idStepData = [
+    {
+      icon: '🪪',
+      title: 'Foto de la cédula',
+      desc: 'El cliente toma una foto de su cédula. La IA verifica autenticidad: detecta fotocopias, alteraciones y fotos superpuestas.',
+      status: 'ok',
+      statusText: '✓ Documento auténtico'
+    },
+    {
+      icon: '🎥',
+      title: 'Video de prueba de vida',
+      desc: 'El cliente graba un video corto de su cara. El sistema compara con la foto de la cédula y detecta que es una persona real — no una foto ni imagen IA.',
+      status: 'ok',
+      statusText: '✓ Biometría verificada · Coincidencia 97%'
+    },
+    {
+      icon: '📲',
+      title: 'Código OTP',
+      desc: 'Se envía un código de verificación por SMS, correo o WhatsApp. El sistema analiza antigüedad del número y sus vínculos con plataformas financieras.',
+      status: 'check',
+      statusText: '⚡ Número verificado · 3 años de antigüedad'
+    },
+    {
+      icon: '📋',
+      title: 'Consultas automáticas',
+      desc: 'SARLAFT · SAGRILAFT · Antecedentes penales · DataCrédito · Experian. Todo en segundos, sin acción del asesor.',
+      status: 'ok',
+      statusText: '✓ Sin alertas en listas vinculantes'
+    }
+  ];
+
+  function selectStep(pillar, idx) {
+    if (pillar === 'id') {
+      const steps = document.querySelectorAll('#id-steps .step');
+      steps.forEach((s, i) => s.classList.toggle('active', i === idx));
+
+      const d = idStepData[idx];
+      const preview = document.getElementById('id-preview');
+      const statusClass = d.status === 'ok' ? 'status-ok' : d.status === 'check' ? 'status-check' : 'status-alert';
+      preview.innerHTML = `
+        <div class="preview-icon">${d.icon}</div>
+        <div class="preview-title">${d.title}</div>
+        <div class="preview-desc">${d.desc}</div>
+        <span class="status-badge ${statusClass}">${d.statusText}</span>
+      `;
+    }
+  }
+
+  const docFilled = {
+    'dv-nombre': 'María González Ríos',
+    'dv-cedula': '43.821.765',
+    'dv-monto': '$4.500.000',
+    'dv-cuota': '$280.000',
+    'dv-plazo': '18',
+    'dv-tasa': '2.4%',
+    'dv-ciudad': 'Medellín',
+    'dv-fecha': '10 de marzo de 2025'
+  };
+
+  function fillDoc() {
+    Object.entries(docFilled).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = val;
+        el.classList.add('filled');
+      }
+    });
+  }
+
+  function resetDoc() {
+    const originals = {
+      'dv-nombre': '[[nombre_cliente]]',
+      'dv-cedula': '[[numero_cedula]]',
+      'dv-monto': '[[monto_credito]]',
+      'dv-cuota': '[[valor_cuota]]',
+      'dv-plazo': '[[plazo_meses]]',
+      'dv-tasa': '[[tasa_interes]]',
+      'dv-ciudad': '[[ciudad]]',
+      'dv-fecha': '[[fecha_firma]]'
+    };
+    Object.entries(originals).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = val;
+        el.classList.remove('filled');
+      }
+    });
+  }
+
+  function goTo(n) {
+    if (n < 1 || n > TOTAL) return;
+    document.getElementById('s' + current).classList.remove('active');
+    current = n;
+    document.getElementById('s' + current).classList.add('active');
+    document.getElementById('slide-counter').textContent = current + ' / ' + TOTAL;
+    document.getElementById('btn-prev').disabled = current === 1;
+    document.getElementById('btn-next').disabled = current === TOTAL;
+    document.getElementById('progress-bar').style.width = ((current / TOTAL) * 100) + '%';
+    if (current === 4) document.getElementById('btn-next').textContent = 'Siguiente →';
+    if (current === TOTAL) document.getElementById('btn-next').textContent = '✓ Fin';
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prev();
+  });
+
+  // Init progress
+  document.getElementById('progress-bar').style.width = ((1 / TOTAL) * 100) + '%';
+</script>
+</body>
+</html>
